@@ -16,6 +16,7 @@ print('training: all predictors...')
 train_data <- vroom(paste0('/home/edwin/github/edwinkost/GLORIF1/example_dataset/Rhine_allpredictors.csv'),
                      show_col_types = F)
 
+# a complete train_data from the file
 train_data_complete <- train_data
 
 
@@ -30,11 +31,9 @@ train_data <- train_data[which(as.Date(train_data$datetime) >= as.Date("1979-01-
 validation_data <- train_data[which(as.Date(train_data$datetime) >= as.Date("2011-01-01")),]
 train_data      <- train_data[which(as.Date(train_data$datetime)  < as.Date("2011-01-01")),]
 
-
+# train the model
 rf_input <- train_data %>% select(., -grdc_no, -cell_no_land, -datetime)
 optimal_ranger <- trainRF(rf_input, num.trees=500, mtry=31, num.threads=48)
-
-outputDir = "./"
 
 print('saving...')
 saveRDS(optimal_ranger, paste0(outputDir,'trainedRF.rds'))                    
@@ -47,6 +46,9 @@ write.csv(vi_df, paste0(outputDir,'varImportance.csv'), row.names=F)
 rf_predict_input <- validation_data %>% select(., -grdc_no, -cell_no_land, -datetime)
 validation_result <- predict(optimal_ranger, rf_predict_input, num.threads=NULL) %>% predictions()
 
-
+# plots for evaluatinfg the results
 plot(validation_data$pcr,validation_data$obs)
 plot(validation_result,validation_data$obs)
+
+# add prediction/validation result to validation_data
+validation_data_after_rf <- cbind(validation_result, validation_data)
